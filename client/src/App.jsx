@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useGameState } from './hooks/useGameState';
 import { GameTable } from './components/GameTable';
 import { Controls } from './components/Controls';
+import { SpecialRulePopup } from './components/SpecialRulePopup';
 
 function App() {
   const [name, setName] = useState('');
   const [joined, setJoined] = useState(false);
-  const { gameState, isConnected, error, makeBid, selectTrump, playCard, createSinglePlayerGame, myId } = useGameState(joined ? name : null);
+  const { gameState, isConnected, error, makeBid, selectTrump, playCard, createSinglePlayerGame, makeSpecialRuleDecision, myId } = useGameState(joined ? name : null);
 
   if (!joined) {
     return (
@@ -144,6 +145,13 @@ function App() {
             </div>
           </div>
         </div>
+
+        {/* Special Rule Decision Popup */}
+        <SpecialRulePopup
+          gameState={gameState}
+          myId={myId}
+          onDecision={makeSpecialRuleDecision}
+        />
       </div>
     </div>
   );

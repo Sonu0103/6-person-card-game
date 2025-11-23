@@ -61,6 +61,10 @@ export function useGameState(playerName) {
         socketRef.current?.emit('createSinglePlayerGame', { playerName: name });
     };
 
+    const makeSpecialRuleDecision = (activate) => {
+        socketRef.current?.emit('makeSpecialRuleDecision', { activate, roomId: gameState?.roomId });
+    };
+
     return {
         gameState,
         isConnected,
@@ -69,6 +73,7 @@ export function useGameState(playerName) {
         selectTrump,
         playCard,
         createSinglePlayerGame,
+        makeSpecialRuleDecision,
         myId: socketRef.current?.id
     };
 }

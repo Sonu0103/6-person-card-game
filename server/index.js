@@ -74,7 +74,7 @@ io.on('connection', (socket) => {
         console.log(`User disconnected: ${socket.id}`);
     });
 
-    const gameActions = ['makeBid', 'selectTrump', 'playCard'];
+    const gameActions = ['makeBid', 'selectTrump', 'playCard', 'makeSpecialRuleDecision'];
     gameActions.forEach(action => {
         socket.on(action, (data) => {
             // Use explicit roomId if provided, otherwise fallback (though fallback is risky)

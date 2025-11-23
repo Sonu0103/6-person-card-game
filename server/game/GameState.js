@@ -21,6 +21,13 @@ class GameState {
         this.scores = { 'A': 0, 'B': 0 };
 
         this.gameLog = [];
+
+        // 16-points special rule tracking
+        this.consecutiveTricksWon = { 'A': 0, 'B': 0 }; // Track consecutive wins per team
+        this.specialRuleEligible = false; // True when team wins 5 consecutive tricks with bid >= 6
+        this.specialRuleActivated = false; // True when team chooses to activate
+        this.specialRuleTeam = null; // Which team activated the rule
+        this.awaitingSpecialRuleDecision = false; // True when waiting for decision
     }
 
     addPlayer(id, name, isBot = false) {
@@ -68,6 +75,13 @@ class GameState {
             p.tricksWon = 0;
             p.bid = null;
         });
+
+        // Reset special rule state
+        this.consecutiveTricksWon = { 'A': 0, 'B': 0 };
+        this.specialRuleEligible = false;
+        this.specialRuleActivated = false;
+        this.specialRuleTeam = null;
+        this.awaitingSpecialRuleDecision = false;
 
         // Player next to dealer starts bidding
         this.currentTurn = (this.dealerIndex + 1) % 6;
@@ -276,11 +290,40 @@ class GameState {
         const winnerPlayerIndex = trickWinner.playerIndex;
 
         this.players[winnerPlayerIndex].tricksWon++;
+        const winnerTeam = this.players[winnerPlayerIndex].team;
         this.gameLog.push(`${this.players[winnerPlayerIndex].name} won the trick.`);
+
+        // Track consecutive trick wins for special rule
+        const loserTeam = winnerTeam === 'A' ? 'B' : 'A';
+        this.consecutiveTricksWon[winnerTeam]++;
+        this.consecutiveTricksWon[loserTeam] = 0; // Reset opponent's streak
 
         this.currentTrick = [];
         this.trickLeader = winnerPlayerIndex;
         this.currentTurn = winnerPlayerIndex;
+
+        // Check for special rule eligibility (5 consecutive wins, bid >= 6, calling team)
+        const callingTeam = this.players[this.bidWinner].team;
+        if (!this.specialRuleActivated &&
+            !this.specialRuleEligible &&
+            winnerTeam === callingTeam &&
+            this.consecutiveTricksWon[winnerTeam] === 5 &&
+            this.currentBid >= 6) {
+
+            this.specialRuleEligible = true;
+            this.awaitingSpecialRuleDecision = true;
+            this.phase = 'SPECIAL_RULE_DECISION';
+            this.gameLog.push(`🎯 Team ${winnerTeam} is eligible for the 16-Points Challenge!`);
+            return; // Wait for decision
+        }
+
+        // Check if special rule was activated and team lost a trick
+        if (this.specialRuleActivated && winnerTeam !== this.specialRuleTeam) {
+            // Special rule team lost a trick - immediate failure
+            this.gameLog.push(`❌ Team ${this.specialRuleTeam} failed the 16-Points Challenge!`);
+            this.calculateScores(); // Will apply -32 penalty
+            return;
+        }
 
         if (this.players[0].hand.length === 0) {
             this.calculateScores();
@@ -300,20 +343,36 @@ class GameState {
         const callerTeam = this.players[this.bidWinner].team;
         const opponentTeam = callerTeam === 'A' ? 'B' : 'A';
 
-        // Bidding team scoring
-        if (teamTricks[callerTeam] >= this.currentBid) {
-            // If they meet or exceed the bid, they get points equal to the bid (not tricks won)
-            this.scores[callerTeam] += this.currentBid;
-            this.gameLog.push(`Team ${callerTeam} met bid of ${this.currentBid} with ${teamTricks[callerTeam]} tricks. (+${this.currentBid} points)`);
+        // Check if special rule was activated
+        if (this.specialRuleActivated) {
+            if (teamTricks[this.specialRuleTeam] === 8) {
+                // Success! Won all 8 tricks
+                this.scores[this.specialRuleTeam] += 16;
+                this.gameLog.push(`🎉 Team ${this.specialRuleTeam} completed the 16-Points Challenge! (+16 points)`);
+            } else {
+                // Failed - didn't win all 8 tricks
+                this.scores[this.specialRuleTeam] -= 32;
+                this.gameLog.push(`💥 Team ${this.specialRuleTeam} failed the 16-Points Challenge with only ${teamTricks[this.specialRuleTeam]} tricks. (-32 points)`);
+            }
+            this.gameLog.push(`Team ${opponentTeam} gets 0 points.`);
         } else {
-            // If they fail, they lose double the bid
-            const penalty = this.currentBid * 2;
-            this.scores[callerTeam] -= penalty;
-            this.gameLog.push(`Team ${callerTeam} failed bid of ${this.currentBid} with only ${teamTricks[callerTeam]} tricks. (-${penalty} points)`);
+            // Normal scoring
+            // Bidding team scoring
+            if (teamTricks[callerTeam] >= this.currentBid) {
+                // If they meet or exceed the bid, they get points equal to the bid (not tricks won)
+                this.scores[callerTeam] += this.currentBid;
+                this.gameLog.push(`Team ${callerTeam} met bid of ${this.currentBid} with ${teamTricks[callerTeam]} tricks. (+${this.currentBid} points)`);
+            } else {
+                // If they fail, they lose double the bid
+                const penalty = this.currentBid * 2;
+                this.scores[callerTeam] -= penalty;
+                this.gameLog.push(`Team ${callerTeam} failed bid of ${this.currentBid} with only ${teamTricks[callerTeam]} tricks. (-${penalty} points)`);
+            }
+
+            // Non-bidding team gets 0 points
+            this.gameLog.push(`Team ${opponentTeam} (non-bidding) gets 0 points.`);
         }
 
-        // Non-bidding team gets 0 points
-        this.gameLog.push(`Team ${opponentTeam} (non-bidding) gets 0 points.`);
 
         // Check for game over conditions: +52 or -52
         let gameOver = false;
@@ -346,6 +405,36 @@ class GameState {
         }
     }
 
+    makeSpecialRuleDecision(playerId, { activate }) {
+        if (!this.awaitingSpecialRuleDecision) {
+            throw new Error('No special rule decision pending');
+        }
+
+        const playerIndex = this.players.findIndex(p => p.id === playerId);
+        const playerTeam = this.players[playerIndex].team;
+        const callingTeam = this.players[this.bidWinner].team;
+
+        // Only calling team members can make this decision
+        if (playerTeam !== callingTeam) {
+            throw new Error('Only calling team can make this decision');
+        }
+
+        this.awaitingSpecialRuleDecision = false;
+
+        if (activate) {
+            this.specialRuleActivated = true;
+            this.specialRuleTeam = callingTeam;
+            this.phase = 'PLAYING';
+            this.gameLog.push(`⚡ Team ${callingTeam} activated the 16-Points Challenge! Must win all 8 tricks!`);
+        } else {
+            this.specialRuleEligible = false;
+            this.phase = 'PLAYING';
+            this.gameLog.push(`Team ${callingTeam} declined the 16-Points Challenge. Continuing with normal play.`);
+        }
+
+        this.checkBotTurn();
+    }
+
     getPublicState() {
         return {
             roomId: this.roomId,
@@ -366,7 +455,11 @@ class GameState {
             bidWinner: this.bidWinner,
             dealerIndex: this.dealerIndex,
             gameLog: this.gameLog.slice(-10),
-            winner: this.winner
+            winner: this.winner,
+            awaitingSpecialRuleDecision: this.awaitingSpecialRuleDecision,
+            specialRuleActivated: this.specialRuleActivated,
+            specialRuleTeam: this.specialRuleTeam,
+            consecutiveTricksWon: this.consecutiveTricksWon
         };
     }
 
