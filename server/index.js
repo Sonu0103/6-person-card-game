@@ -13,7 +13,7 @@ const io = new Server(server, {
     cors: {
         origin: [
             "http://localhost:5173",
-            "https://card-game-6-2o8rv4wm5-sonu0103s-projects.vercel.app"  // Your Vercel URL
+            "https://card-game-6-4ikbw7mwv-sonu0103s-projects.vercel.app"  // Your Vercel URL
         ],
         methods: ["GET", "POST"]
     }
