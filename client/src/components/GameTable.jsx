@@ -32,12 +32,12 @@ export function GameTable({ gameState, myId, onPlayCard, children }) {
     ];
 
     return (
-        <div className="relative w-full h-[800px] bg-green-800 rounded-3xl shadow-2xl overflow-hidden border-8 border-amber-900">
+        <div className="relative w-full h-[500px] sm:h-[600px] lg:h-[800px] bg-green-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-4 sm:border-8 border-amber-900">
             {/* Center Table Area */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-green-700 rounded-full border-4 border-green-600 flex items-center justify-center">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 bg-green-700 rounded-full border-2 sm:border-4 border-green-600 flex items-center justify-center">
                 {/* Trump Indicator */}
                 {trumpSuit && (
-                    <div className="absolute top-4 right-4 text-2xl bg-white p-2 rounded-full shadow-md">
+                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4 text-lg sm:text-2xl bg-white p-1 sm:p-2 rounded-full shadow-md">
                         Trump: <span className={['H', 'D'].includes(trumpSuit) ? 'text-red-600' : 'text-black'}>
                             {{ 'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣' }[trumpSuit]}
                         </span>
@@ -80,14 +80,14 @@ export function GameTable({ gameState, myId, onPlayCard, children }) {
             {rotatedPlayers.map((player, index) => (
                 <div key={player.id} className={`absolute ${positions[index]} flex flex-col items-center`}>
                     <div className={`
-                        w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl mb-2 border-4 shadow-lg
+                        w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base lg:text-xl mb-1 sm:mb-2 border-2 sm:border-4 shadow-lg
                         ${gameState.currentTurn === (player.id === myId ? myIndex : players.findIndex(p => p.id === player.id))
                             ? 'border-yellow-400 bg-yellow-600 animate-pulse'
                             : 'border-slate-600 bg-slate-800'}
                     `}>
                         {player.name[0]}
                     </div>
-                    <div className="bg-black/50 px-3 py-1 rounded-full text-white text-sm mb-1">
+                    <div className="bg-black/50 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-white text-xs sm:text-sm mb-0.5 sm:mb-1">
                         {player.name} (Team {player.team})
                     </div>
                     <div className="text-xs text-yellow-200">
@@ -101,7 +101,7 @@ export function GameTable({ gameState, myId, onPlayCard, children }) {
 
                     {/* Hand (Only visible for Me) */}
                     {index === 0 && (
-                        <div className="flex -space-x-8 mt-4 hover:space-x-1 transition-all">
+                        <div className="flex -space-x-6 sm:-space-x-8 mt-2 sm:mt-4 hover:space-x-0.5 sm:hover:space-x-1 transition-all">
                             {gameState.myHand.map((card, i) => (
                                 <Card
                                     key={i}
@@ -115,9 +115,9 @@ export function GameTable({ gameState, myId, onPlayCard, children }) {
 
                     {/* Card Backs for others */}
                     {index !== 0 && (
-                        <div className="flex -space-x-10 mt-2">
+                        <div className="flex -space-x-6 sm:-space-x-10 mt-1 sm:mt-2">
                             {Array(player.handCount).fill(0).map((_, i) => (
-                                <div key={i} className="w-8 h-12 bg-blue-800 rounded border border-white shadow-sm"></div>
+                                <div key={i} className="w-6 h-8 sm:w-8 sm:h-12 bg-blue-800 rounded border border-white shadow-sm"></div>
                             ))}
                         </div>
                     )}

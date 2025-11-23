@@ -94,29 +94,29 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4 flex flex-col items-center">
+    <div className="min-h-screen bg-slate-900 p-2 sm:p-4 flex flex-col items-center">
       <div className="w-full max-w-7xl relative">
         {/* Header / Scoreboard */}
-        <div className="flex justify-between items-center mb-4 text-white bg-slate-800 p-4 rounded-xl shadow-lg">
-          <div className="flex gap-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 mb-4 text-white bg-slate-800 p-3 sm:p-4 rounded-xl shadow-lg">
+          <div className="flex gap-4 sm:gap-8">
             <div className="text-center">
-              <div className="text-sm text-slate-400">Team A</div>
-              <div className="text-3xl font-bold text-blue-400">{gameState.scores.A}</div>
+              <div className="text-xs sm:text-sm text-slate-400">Team A</div>
+              <div className="text-2xl sm:text-3xl font-bold text-blue-400">{gameState.scores.A}</div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-slate-400">Team B</div>
-              <div className="text-3xl font-bold text-red-400">{gameState.scores.B}</div>
+              <div className="text-xs sm:text-sm text-slate-400">Team B</div>
+              <div className="text-2xl sm:text-3xl font-bold text-red-400">{gameState.scores.B}</div>
             </div>
           </div>
-          <div className="text-xl font-bold">
+          <div className="text-base sm:text-xl font-bold text-center">
             Phase: <span className="text-yellow-400">{gameState.phase}</span>
           </div>
-          <div>
+          <div className="hidden sm:block text-sm">
             Room: {gameState.roomId}
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Left Column: Game Table & Controls */}
           <div className="flex-grow">
             <GameTable
@@ -134,10 +134,10 @@ function App() {
           </div>
 
           {/* Right Column: Game Log */}
-          <div className="w-80 flex-shrink-0">
-            <div className="bg-slate-800 p-4 rounded-xl h-[800px] flex flex-col shadow-lg">
-              <h3 className="text-white font-bold mb-2 border-b border-slate-700 pb-2">Game Log</h3>
-              <div className="flex-grow overflow-y-auto text-sm text-slate-300 space-y-1">
+          <div className="w-full lg:w-80 flex-shrink-0">
+            <div className="bg-slate-800 p-3 sm:p-4 rounded-xl h-64 sm:h-96 lg:h-[800px] flex flex-col shadow-lg">
+              <h3 className="text-white font-bold mb-2 border-b border-slate-700 pb-2 text-sm sm:text-base">Game Log</h3>
+              <div className="flex-grow overflow-y-auto text-xs sm:text-sm text-slate-300 space-y-1">
                 {gameState.gameLog.map((log, i) => (
                   <div key={i} className="break-words">{log}</div>
                 ))}
