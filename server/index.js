@@ -11,9 +11,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: [
-            "https://card-game-6-4ikbw7mwv-sonu0103s-projects.vercel.app"
-        ],
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
