@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ||
-    (import.meta.env.PROD ? 'https://card-game-server-b3lz.onrender.com' : 'http://localhost:3001');
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
-export function useGameState(playerName) {
+export function useGameState(playerName, roomId = null) {
     const [gameState, setGameState] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState(null);
@@ -19,7 +18,11 @@ export function useGameState(playerName) {
 
         socket.on('connect', () => {
             setIsConnected(true);
-            socket.emit('joinGame', { playerName });
+            // If roomId is provided, the game is already started via room system
+            // Otherwise, use legacy joinGame for backward compatibility
+            if (!roomId) {
+                socket.emit('joinGame', { playerName });
+            }
         });
 
         socket.on('gameStateUpdate', (state) => {
@@ -38,24 +41,24 @@ export function useGameState(playerName) {
         return () => {
             socket.disconnect();
         };
-    }, [playerName]);
+    }, [playerName, roomId]);
 
     const makeBid = (bid) => {
         console.log('useGameState: makeBid called with', bid);
         if (socketRef.current) {
-            socketRef.current.emit('makeBid', { bid, roomId: gameState?.roomId });
-            console.log('useGameState: emitted makeBid for room', gameState?.roomId);
+            socketRef.current.emit('makeBid', { bid, roomId: roomId || gameState?.roomId });
+            console.log('useGameState: emitted makeBid for room', roomId || gameState?.roomId);
         } else {
             console.error('useGameState: socket not connected');
         }
     };
 
     const selectTrump = (suit) => {
-        socketRef.current?.emit('selectTrump', { suit, roomId: gameState?.roomId });
+        socketRef.current?.emit('selectTrump', { suit, roomId: roomId || gameState?.roomId });
     };
 
     const playCard = (card) => {
-        socketRef.current?.emit('playCard', { card, roomId: gameState?.roomId });
+        socketRef.current?.emit('playCard', { card, roomId: roomId || gameState?.roomId });
     };
 
     const createSinglePlayerGame = (name) => {
@@ -63,7 +66,7 @@ export function useGameState(playerName) {
     };
 
     const makeSpecialRuleDecision = (activate) => {
-        socketRef.current?.emit('makeSpecialRuleDecision', { activate, roomId: gameState?.roomId });
+        socketRef.current?.emit('makeSpecialRuleDecision', { activate, roomId: roomId || gameState?.roomId });
     };
 
     return {
