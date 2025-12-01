@@ -18,7 +18,12 @@ export function useGameState(playerName, roomId = null, existingSocket = null) {
             setIsConnected(existingSocket.connected);
 
             existingSocket.on('gameStateUpdate', (state) => {
-                console.log('Game state update received:', state?.phase);
+                console.log('Game state update received:', {
+                    phase: state?.phase,
+                    playerCount: state?.players?.length,
+                    hasMyHand: !!state?.myHand,
+                    myHandLength: state?.myHand?.length
+                });
                 setGameState(state);
                 setError(null);
             });

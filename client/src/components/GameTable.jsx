@@ -2,12 +2,34 @@ import React, { useState } from 'react';
 import { Card } from './Card';
 
 export function GameTable({ gameState, myId, onPlayCard, children }) {
-    if (!gameState) return null;
+    console.log('GameTable render:', {
+        hasGameState: !!gameState,
+        phase: gameState?.phase,
+        playerCount: gameState?.players?.length,
+        myId,
+        players: gameState?.players?.map(p => p.name)
+    });
+
+    if (!gameState) {
+        console.log('GameTable: No game state');
+        return <div className="text-white text-center p-8">Loading game...</div>;
+    }
+
+    if (!gameState.players || gameState.players.length === 0) {
+        console.log('GameTable: No players in game state');
+        return <div className="text-white text-center p-8">Waiting for players...</div>;
+    }
 
     const { players, currentTrick, currentTurn, dealerIndex, trumpSuit } = gameState;
 
     // Rotate players so "me" is at bottom
     const myIndex = players.findIndex(p => p.id === myId);
+
+    if (myIndex === -1) {
+        console.log('GameTable: My ID not found in players', { myId, playerIds: players.map(p => p.id) });
+        return <div className="text-white text-center p-8">Finding your position...</div>;
+    }
+
     const rotatedPlayers = [
         ...players.slice(myIndex),
         ...players.slice(0, myIndex)
