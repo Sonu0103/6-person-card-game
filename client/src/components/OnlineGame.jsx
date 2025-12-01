@@ -6,8 +6,8 @@ import { SpecialRulePopup } from './SpecialRulePopup';
 import { Scoreboard } from './Scoreboard';
 import { GameOverScreen } from './GameOverScreen';
 
-export function OnlineGame({ playerName, roomId, onLeave }) {
-    const { gameState, isConnected, error, makeBid, selectTrump, playCard, makeSpecialRuleDecision, myId } = useGameState(playerName, roomId);
+export function OnlineGame({ playerName, roomId, socket, onLeave }) {
+    const { gameState, isConnected, error, makeBid, selectTrump, playCard, makeSpecialRuleDecision, myId } = useGameState(playerName, roomId, socket);
 
     const handleNewGame = useCallback(() => {
         // For online, reloading is the safest way to rejoin/reset for now

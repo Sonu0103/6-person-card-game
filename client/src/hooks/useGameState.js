@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
-export function useGameState(playerName, roomId = null) {
+export function useGameState(playerName, roomId = null, existingSocket = null) {
     const [gameState, setGameState] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState(null);
@@ -12,36 +12,59 @@ export function useGameState(playerName, roomId = null) {
     useEffect(() => {
         if (!playerName) return;
 
-        socketRef.current = io(SOCKET_URL);
+        // Use existing socket if provided (for room-based games)
+        if (existingSocket) {
+            socketRef.current = existingSocket;
+            setIsConnected(existingSocket.connected);
 
-        const socket = socketRef.current;
+            existingSocket.on('gameStateUpdate', (state) => {
+                console.log('Game state update received:', state?.phase);
+                setGameState(state);
+                setError(null);
+            });
 
-        socket.on('connect', () => {
+            existingSocket.on('error', (msg) => {
+                console.error('Socket error:', msg);
+                setError(msg);
+            });
+
+            return () => {
+                // Don't disconnect the socket, just remove listeners
+                existingSocket.off('gameStateUpdate');
+                existingSocket.off('error');
+            };
+        }
+
+        // Otherwise create new socket (for legacy joinGame)
+        const newSocket = io(SOCKET_URL);
+        socketRef.current = newSocket;
+
+        newSocket.on('connect', () => {
             setIsConnected(true);
             // If roomId is provided, the game is already started via room system
             // Otherwise, use legacy joinGame for backward compatibility
             if (!roomId) {
-                socket.emit('joinGame', { playerName });
+                newSocket.emit('joinGame', { playerName });
             }
         });
 
-        socket.on('gameStateUpdate', (state) => {
+        newSocket.on('gameStateUpdate', (state) => {
             setGameState(state);
             setError(null);
         });
 
-        socket.on('error', (msg) => {
+        newSocket.on('error', (msg) => {
             setError(msg);
         });
 
-        socket.on('disconnect', () => {
+        newSocket.on('disconnect', () => {
             setIsConnected(false);
         });
 
         return () => {
-            socket.disconnect();
+            newSocket.disconnect();
         };
-    }, [playerName, roomId]);
+    }, [playerName, roomId, existingSocket]);
 
     const makeBid = (bid) => {
         console.log('useGameState: makeBid called with', bid);

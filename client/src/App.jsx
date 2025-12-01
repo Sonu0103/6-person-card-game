@@ -123,6 +123,7 @@ function App() {
         <OnlineGame
           playerName={playerName}
           roomId={currentRoom.roomId}
+          socket={socket}
           onLeave={handleBackToMenu}
         />
       )}
